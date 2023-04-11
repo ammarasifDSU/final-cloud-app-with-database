@@ -95,6 +95,39 @@
                     <input class="btn btn-success btn-block" type="submit" value="Submit">
             </form> -->
 
+            <div class="row">
+                <div class="col-md-8">
+                  <h1>{{ course.name }}</h1>
+                  <p>{{ course.description }}</p>
+                  {% if user.is_authenticated %}
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#examCollapse" aria-expanded="false" aria-controls="examCollapse">
+                      Take Exam
+                    </button>
+                    <div class="collapse" id="examCollapse">
+                      <form method="post" action="{% url 'submit_exam' course.id %}">
+                        {% csrf_token %}
+                        {% for question in course.questions.all %}
+                          <div class="card my-3">
+                            <div class="card-body">
+                              <h5 class="card-title">{{ question.content }}</h5>
+                              {% for choice in question.choices.all %}
+                                <div class="form-check">
+                                  <input class="form-check-input" type="checkbox" name="selected_choices" value="{{ choice.id }}" id="{{ choice.id }}">
+                                  <label class="form-check-label" for="{{ choice.id }}">
+                                    {{ choice.content }}
+                                  </label>
+                                </div>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        {% endfor %}
+                        <button class="btn btn-primary" type="submit">Submit Exam</button>
+                      </form>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+
             <!--Check here to see more details Bootstrap checkbox
              https://www.w3schools.com/bootstrap4/bootstrap_forms_inputs.asp-->
     </div>

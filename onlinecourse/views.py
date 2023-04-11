@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 # <HINT> Import any new Models here
-from .models import Course, Enrollment
+from .models import Course, Enrollment,Question, Choice, Submission
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -111,6 +111,31 @@ def enroll(request, course_id):
          # Add each selected choice object to the submission object
          # Redirect to show_exam_result with the submission id
 #def submit(request, course_id):
+def submit(request, course_id):
+    # Get the current user and course object
+    user = request.user
+    course = get_object_or_404(Course, pk=course_id)
+
+    # Get the enrollment object for the current user and course
+    enrollment = get_object_or_404(Enrollment, user=user, course=course)
+
+    # Create a new submission object for the enrollment
+    submission = Submission.objects.create(enrollment=enrollment)
+
+    # Collect the selected choices from the request.POST dictionary
+    selected_choices = []
+    for key, value in request.POST.items():
+        if key.startswith('choice_'):
+            choice_id = int(value)
+            choice = get_object_or_404(Choice, pk=choice_id)
+            selected_choices.append(choice)
+
+    # Add each selected choice to the submission object
+    for choice in selected_choices:
+        submission.choices.add(choice)
+
+    # Redirect to show_exam_result view with the submission id
+    return redirect('show_exam_result', submission_id=submission.id)
 
 
 # <HINT> A example method to collect the selected choices from the exam form from the request object
@@ -131,6 +156,24 @@ def enroll(request, course_id):
         # For each selected choice, check if it is a correct answer or not
         # Calculate the total score
 #def show_exam_result(request, course_id, submission_id):
+def show_exam_result(request, course_id, submission_id):
+    course = get_object_or_404(Course, id=course_id)
+    submission = get_object_or_404(Submission, id=submission_id)
+    selected_choice_ids = submission.choices.values_list('id', flat=True)
+    
+    # Calculate total grade for the course
+    total_grade = 0
+    for question in course.questions.all():
+        if question.is_get_score(selected_choice_ids):
+            total_grade += question.grade
+    
+    context = {
+        'course': course,
+        'selected_ids': selected_choice_ids,
+        'grade': total_grade
+    }
+    
+    return render(request, 'course_exam_result.html', context)
 
 
 
